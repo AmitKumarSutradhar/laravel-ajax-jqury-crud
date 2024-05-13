@@ -8,8 +8,14 @@
 
 $(document).ready(function(){
 
-
     $("#create-todo-btn").click(function(){
+        $('#todo-modal #title').val("");
+        $('#todo-modal #description').val("");
+        $("#todo-form input, #todo-form textarea").removeAttr("disabled");
+        $('#todo-form button[type=submit]').removeClass("d-none");
+        $('#modal-title').text('Create Todo');
+        $("#todo-form").attr("action", `${baseUrl}/todos`);
+        $("#hidden-todo-id").remove();
         $('#todo-modal').modal("toggle");
     });
 
@@ -45,9 +51,13 @@ $(document).ready(function(){
 
             const formData = $(form).serializeArray();
 
+            const todoId = $("#hidden-todo-id").val();
+            const methodType = todoId && "PUT" || "POST";
+            const formAction = $('form').attr("action");
+
             $.ajax({
-                url : "todos",
-                type: "POST",
+                url : formAction,
+                type: methodType,
                 data: formData,
                 beforeSend: function(){
                     console.log("Loading....");
@@ -65,19 +75,26 @@ $(document).ready(function(){
                              </div>`
                         );
 
-                        $("#todo-table").append(
-                            `<tr>
-                                <td class="dt-type-numeric sorting_1">${ response.todo.id }</td>
-                                <td>${ response.todo.title }</td>
-                                <td>${ response.todo.description }</td>
-                                <td>${ response.todo.is_completed ? 'Yes' : 'No' }</td>
-                                <td>
-                                    <a class="btn btn-info btn-sm" href="javascript:void(0)" data-id="${response.todo.id}">View</a>
-                                    <a class="btn btn-success btn-sm" href="javascript:void(0)" data-id="${response.todo.id}">Edit</a>
-                                    <a class="btn btn-danger btn-sm" href="javascript:void(0)" data-id="${response.todo.id}">Delete</a>
-                                </td>
-                             </tr>`
-                        );
+                        // For Update
+                        if (todoId){
+                            $(`#todo_${todoId} td:nth-child(2)`).html(response.todo.title);
+                            $(`#todo_${todoId} td:nth-child(3)`).html(response.todo.description);
+                        } else {
+                            $("#todo-table").append(
+                                `<tr id="todo_${response.todo.id}">
+                                    <td class="dt-type-numeric sorting_1">${ response.todo.id }</td>
+                                    <td>${ response.todo.title }</td>
+                                    <td>${ response.todo.description }</td>
+                                    <td>${ response.todo.is_completed ? 'Yes' : 'No' }</td>
+                                    <td>
+                                        <a class="btn btn-info btn-sm btn-view" href="javascript:void(0)" data-id="${response.todo.id}">View</a>
+                                        <a class="btn btn-success btn-sm btn-edit" href="javascript:void(0)" data-id="${response.todo.id}">Edit</a>
+                                        <a class="btn btn-danger btn-sm btn-delete" href="javascript:void(0)" data-id="${response.todo.id}">Delete</a>
+                                    </td>
+                                </tr>`
+                            );
+                        }
+
                     }else if(response.status === 'failed'){
                         $("#response").html(
                             `<div class='alert alert-danger alert-dismissble'>
@@ -103,8 +120,60 @@ $(document).ready(function(){
 
     $('#todo-table').DataTable();
 
-    $('.btn-view').click(function () {
+    $("#todo-table").on("click", ".btn-view", function () {
         const todoId = $(this).data("id");
-        console.log(todoId);
+        const mode = "view"
+
+        todoId && fetchTodo(todoId, mode);
+
+        // console.log(todoId);
     });
+
+    function fetchTodo(todoId, mode=null){
+        if(todoId){
+            $.ajax({
+                url: `todos/${todoId}`,
+                type: "GET",
+                success: function (response) {
+                    console.log(response);
+                    if (response.status === 'success'){
+                        const todo = response.todo;
+
+                        $('#todo-modal #title').val(todo.title);
+                        $('#todo-modal #description').val(todo.description);
+
+                        if (mode === 'view'){
+                            $('#todo-form input, #todo-form textarea').attr("disabled",true);
+                            $('#todo-form button[type=submit]').addClass("d-none");
+                            $('#modal-title').text('Todo Details.');
+                            $("#todo-form").removeAttr('action');
+                        } else if(mode === 'edit'){
+                            $('#todo-form input, #todo-form textarea').removeAttr("disabled");
+                            $('#todo-form button[type=submit]').removeClass("d-none");
+                            $('#modal-title').text('Update Todo Details.');
+                            $("#todo-form").attr("action", `${baseUrl}/todos/${todo.id}`);
+                            $("#todo-form").append(`<input type="hidden" id="hidden-todo-id" value="${todo.id}"> `);
+                        }
+
+
+                        $('#todo-modal').modal("toggle");
+                    }
+                },
+
+                error: function (error) {
+                    console.error(error)
+                }
+            });
+        }
+    }
+
+    // Edit BTN
+    $("#todo-table").on("click", ".btn-edit", function () {
+        const todoId = $(this).data('id');
+        const mode = "edit"
+
+        todoId && fetchTodo(todoId, mode);
+    });
+
+
 });

@@ -48,19 +48,25 @@ class TodoController extends Controller
                 'amit', 'promit', 'sumit'
             ]
         );
+
         if($todo){
             return  response()->json(['status' => 'success', 'message' => 'Todo created successfully.', 'todo' => $todo, 'test' => $test]);
-        }else{
-            return  response()->json(['status' => 'failed', 'message' => 'Todo creation failed.']);
         }
+
+        return  response()->json(['status' => 'failed', 'message' => 'Todo creation failed.']);
+
     }
 
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show(Todo $todo)
     {
-        //
+       if ($todo){
+           return response()->json(['status' => 'success', 'todo' => $todo]);
+       } else{
+           return response()->json(['status' => 'failed', 'message' => 'Todo not found.']);
+       }
     }
 
     /**
@@ -74,9 +80,17 @@ class TodoController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(Request $request, Todo $todo)
     {
-        //
+        if ($todo){
+            $todo['title'] = $request->title;
+            $todo['description'] = $request->description;
+            $todo->save();
+
+            return response()->json(['status' => 'success', 'message' => 'Todo updated successfully.', 'todo' => $todo]);
+        }
+
+        return  response()->json(['status' => 'failed', 'message' => 'Todo update failed.']);
     }
 
     /**

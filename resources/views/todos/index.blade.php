@@ -26,7 +26,7 @@
 
             <tbody>
             @forelse($todos as $todo)
-                <tr>
+                <tr id="{{ 'todo_'.$todo->id }}">
                     <td>{{ $todo->id }}</td>
                     <td>{{ $todo->title }}</td>
                     <td>{{ $todo->description }}</td>
