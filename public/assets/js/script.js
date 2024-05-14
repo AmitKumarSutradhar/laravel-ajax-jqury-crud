@@ -1,8 +1,8 @@
-// $.ajaxSetup({
-//     headers:  {
-//         "X-CSRF-TOKEN" : $('meta[name="csrf-token"]').attr('content')
-//     }
-// });
+$.ajaxSetup({
+    headers:  {
+        "X-CSRF-TOKEN" : $('meta[name="csrf-token"]').attr('content')
+    }
+});
 
 
 
@@ -67,7 +67,23 @@ $(document).ready(function(){
                     $("#todo-modal").modal("toggle");
 
                     if (response.status === 'success'){
-                        console.log('response.test')
+                        const Toast = Swal.mixin({
+                            toast: true,
+                            timerProgressBar: true,
+                            didOpen: (toast) => {
+                                toast.onmouseenter = Swal.stopTimer;
+                                toast.onmouseleave = Swal.resumeTimer;
+                            }
+                        });
+                        Toast.fire({
+                            position: "top-end",
+                            showConfirmButton: false,
+                            timer: 3000,
+                            icon: "success",
+                            title: "Success",
+                            text: response.message,
+                        });
+
                         $("#response").html(
                             `<div class='alert alert-success alert-dismissble'>
                                 ${response.message}
@@ -175,5 +191,58 @@ $(document).ready(function(){
         todoId && fetchTodo(todoId, mode);
     });
 
+    // Delete BTN
+   $("#todo-table").on("click",".btn-delete", function () {
+        const todoId = $(this).data("id");
+
+        if (todoId){
+            Swal.fire({
+                title: "Are you sure?",
+                text: "You won't be able to revert this!",
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonColor: "#3085d6",
+                cancelButtonColor: "#d33",
+                confirmButtonText: "Yes, delete it!"
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        url: `todos/${todoId}`,
+                        type: "DELETE",
+                        success: function (response) {
+                            if (response.status === "success"){
+                                Swal.fire({
+                                    title: "Deleted!",
+                                    text: "Your file has been deleted.",
+                                    icon: "success"
+                                });
+
+                                console.log(`${response.todo.id}`);
+                                if (response.todo){
+                                    console.log(`${response.todo.id}`);
+                                    $(`#todo_${response.todo.id}`).remove();
+                                }
+                            }else {
+                                Swal.fire({
+                                    title: "Failed!",
+                                    text: "Unable to delete file.",
+                                    icon: "error"
+                                });
+                            }
+                        },
+                        error: function (error) {
+                            Swal.fire({
+                                title: "Failed!",
+                                text: "Unable to delete file.",
+                                icon: "error"
+                            });
+                        }
+                    });
+
+
+                }
+            });
+        }
+   })
 
 });
